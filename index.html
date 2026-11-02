@@ -921,6 +921,9 @@
 
         // Generic Helper to save data (Firestore + local state fallback)
         async function saveData(colName, itemData) {
+            // Clean undefined values
+            Object.keys(itemData).forEach(key => itemData[key] === undefined && delete itemData[key]);
+
             if (isFirebaseConnected && db) {
                 try {
                     await addDoc(collection(db, colName), itemData);
@@ -928,12 +931,18 @@
                     return;
                 } catch (e) {
                     console.error("Error guardando en Firebase: ", e);
+                    showNotification("⚠️ Error Firebase: Verifique las Reglas de Firestore (" + e.message + ")");
+                    // Save locally as backup
+                    const newItem = { id: Date.now().toString(), ...itemData };
+                    state[colName].push(newItem);
+                    renderUI();
+                    return;
                 }
             }
             // Fallback: save to local state
             const newItem = { id: Date.now().toString(), ...itemData };
             state[colName].push(newItem);
-            showNotification("Registro guardado localmente.");
+            showNotification("Registro guardado en almacenamiento local.");
             renderUI();
         }
 
@@ -946,6 +955,7 @@
                     return;
                 } catch (e) {
                     console.error("Error al eliminar: ", e);
+                    showNotification("⚠️ Error al eliminar en Firebase: " + e.message);
                 }
             }
             state[colName] = state[colName].filter(item => item.id !== id);
