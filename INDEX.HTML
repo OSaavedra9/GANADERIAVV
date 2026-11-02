@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroManager - Gestión Agropecuaria Integral</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        agro: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        cacao: {
+                            500: '#854d0e',
+                            700: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-item-active {
+            background-color: #16a34a;
+            color: white;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 antialiased min-h-screen flex flex-col md:flex-row">
+
+    <!-- Mobile Header Navigation -->
+    <div class="md:hidden bg-agro-900 text-white p-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid font-bold fa-tractor text-2xl text-emerald-400"></i>
+            <span class="font-bold text-xl">AgroManager</span>
+        </div>
+        <button id="mobileMenuBtn" class="text-white text-2xl focus:outline-none">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="w-full md:w-64 bg-agro-900 text-white flex-col justify-between hidden md:flex min-h-screen shadow-xl z-20">
+        <div>
+            <!-- Header Brand -->
+            <div class="p-5 border-b border-agro-800 flex items-center space-x-3">
+                <div class="bg-emerald-500 p-2.5 rounded-xl text-agro-900 font-extrabold text-xl">
+                    <i class="fa-solid fa-wheat-awn-circle-exclamation"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">AgroManager</h1>
+                    <p class="text-xs text-emerald-300">Gestión Ganado & Cultivo</p>
+                </div>
+            </div>
+
+            <!-- Firebase Connection Status Indicator -->
+            <div class="px-5 py-2.5 bg-agro-950/60 flex items-center justify-between text-xs border-b border-agro-800">
+                <span class="flex items-center space-x-2">
+                    <span id="dbStatusDot" class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                    <span id="dbStatusText" class="text-gray-300">Conectando DB...</span>
+                </span>
+                <i class="fa-solid fa-cloud text-emerald-400"></i>
+            </div>
+
+            <!-- Menu Navigation Links -->
+            <nav class="p-4 space-y-1 text-sm font-medium">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-agro-800 transition duration-150 sidebar-item-active">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <span>Dashboard General</span>
+                </button>
+                <button onclick="switchTab('ganaderia')" id="nav-ganaderia" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-agro-800 transition duration-150">
+                    <i class="fa-solid fa-cow w-5 text-center"></i>
+                    <span>Ganadería & Lotes</span>
+                </button>
+                <button onclick="switchTab('agricultura')" id="nav-agricultura" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-agro-800 transition duration-150">
+                    <i class="fa-solid fa-seedling w-5 text-center"></i>
+                    <span>Agricultura & Cultivos</span>
+                </button>
+                <button onclick="switchTab('maquinaria')" id="nav-maquinaria" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-agro-800 transition duration-150">
+                    <i class="fa-solid fa-tractor w-5 text-center"></i>
+                    <span>Maquinaria & Equipos</span>
+                </button>
+                <button onclick="switchTab('inventario')" id="nav-inventario" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-agro-800 transition duration-150">
+                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i>
+                    <span>Inventario & Insumos</span>
+                </button>
+                <button onclick="switchTab('finanzas')" id="nav-finanzas" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-agro-800 transition duration-150">
+                    <i class="fa-solid fa-hand-holding-dollar w-5 text-center"></i>
+                    <span>Finanzas Agropecuarias</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-agro-800 text-xs text-center text-emerald-200">
+            <p>© 2026 AgroManager Pro</p>
+            <p class="text-gray-400 mt-1">Conectado a Firebase</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto custom-scrollbar">
+        <!-- Top App Bar -->
+        <header class="bg-white border-b border-gray-200 p-4 px-6 flex justify-between items-center sticky top-0 z-10">
+            <h2 id="pageTitle" class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-agro-600"></i> Dashboard General
+            </h2>
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-semibold text-gray-700">Finca / Emprendimiento</p>
+                    <p class="text-xs text-gray-500" id="currentDate">Cargando fecha...</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-agro-100 flex items-center justify-center text-agro-700 font-bold border border-agro-300">
+                    <i class="fa-solid fa-user-gear"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Notification / Alerts Bar -->
+        <div id="statusNotification" class="hidden bg-emerald-50 border-l-4 border-emerald-500 p-4 m-6 mb-0 rounded shadow-sm text-emerald-800 text-sm flex justify-between items-center">
+            <span id="statusNotificationMsg">Operación completada exitosamente.</span>
+            <button onclick="document.getElementById('statusNotification').classList.add('hidden')" class="text-emerald-700 hover:text-emerald-900 font-bold">✕</button>
+        </div>
+
+        <!-- Firebase Firestore Warning Banner (Shows when API is disabled) -->
+        <div id="firebaseApiWarning" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 m-6 mb-0 rounded shadow-sm text-amber-900 text-sm flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl flex-shrink-0"></i>
+                <div>
+                    <p class="font-bold">Atención: Cloud Firestore no está habilitado en tu proyecto Firebase.</p>
+                    <p class="text-xs text-amber-800 mt-0.5">La aplicación está funcionando en <strong>Modo Local / Demo</strong>. Para sincronizar datos en la nube, debes activar la base de datos Firestore en la consola de Firebase.</p>
+                </div>
+            </div>
+            <a href="https://console.firebase.google.com/project/ganaderia-vv/firestore" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded font-semibold transition flex-shrink-0">Activar en Firebase</a>
+        </div>
+
+        <div class="p-6 space-y-6 flex-1">
+
+            <!-- TAB 1: DASHBOARD GENERAL -->
+            <section id="tab-dashboard" class="tab-content space-y-6">
+                <!-- Metrics Summary Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <!-- Metric 1: Ganado -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Total Ganado</p>
+                                <h3 id="dashTotalGanado" class="text-3xl font-black text-gray-800 mt-1">0</h3>
+                                <p class="text-xs text-emerald-600 mt-1 font-medium"><i class="fa-solid fa-cow mr-1"></i> Cabezas en finca</p>
+                            </div>
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <i class="fa-solid fa-cow text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 2: Cultivos -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Siembras Activas</p>
+                                <h3 id="dashTotalCultivos" class="text-3xl font-black text-gray-800 mt-1">0</h3>
+                                <p class="text-xs text-amber-600 mt-1 font-medium"><i class="fa-solid fa-vector-square mr-1"></i> Lotes en producción</p>
+                            </div>
+                            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                                <i class="fa-solid fa-seedling text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 3: Maquinarias -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Maquinarias</p>
+                                <h3 id="dashTotalMaquinaria" class="text-3xl font-black text-gray-800 mt-1">0</h3>
+                                <p class="text-xs text-blue-600 mt-1 font-medium"><i class="fa-solid fa-wrench mr-1"></i> Equipos operativos</p>
+                            </div>
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                                <i class="fa-solid fa-tractor text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 4: Balance -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase text-gray-400 tracking-wider">Balance Mes</p>
+                                <h3 id="dashBalance" class="text-3xl font-black text-gray-800 mt-1">$0</h3>
+                                <p class="text-xs text-emerald-600 mt-1 font-medium" id="dashBalanceSub">Ingresos - Gastos</p>
+                            </div>
+                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                                <i class="fa-solid fa-sack-dollar text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Charts & Alerts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main Chart -->
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-gray-800 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-column text-agro-600 mr-2"></i> Balance Financiero Reciente</span>
+                            <span class="text-xs text-gray-400 font-normal">Últimos movimientos</span>
+                        </h4>
+                        <div class="h-64">
+                            <canvas id="financeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Critical Stock & Maintenance Alerts -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <h4 class="font-bold text-gray-800 mb-4 flex items-center text-red-600">
+                            <i class="fa-solid fa-bell mr-2"></i> Alertas y Recordatorios
+                        </h4>
+                        <div id="alertsList" class="space-y-3 flex-1 overflow-y-auto max-h-64 custom-scrollbar text-sm">
+                            <!-- Dynamic Alerts injected here -->
+                            <div class="p-3 bg-gray-50 text-gray-500 rounded-lg text-center">Cargando alertas del sistema...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: GANADERÍA Y LOTES -->
+            <section id="tab-ganaderia" class="tab-content hidden space-y-6">
+                <!-- Action Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Lotes de Ganado</h3>
+                        <p class="text-xs text-gray-500">Gestión de potreros, razas y seguimiento zootécnico</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="openModal('modalLoteGanado')" class="bg-agro-600 hover:bg-agro-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Nuevo Lote de Ganado
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cards Grid - Lotes de Ganado -->
+                <div id="gridLotesGanado" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Dynamic Grid Items -->
+                </div>
+
+                <!-- Sub-section: Registro de Avances / Bitácora Zootécnica -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list text-agro-600"></i> Registro de Avances y Eventos Sanitarios
+                        </h4>
+                        <button onclick="openModal('modalAvanceGanado')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-md transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus-circle"></i> Registrar Evento
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3">Fecha</th>
+                                    <th class="px-4 py-3">Lote</th>
+                                    <th class="px-4 py-3">Tipo Evento</th>
+                                    <th class="px-4 py-3">Detalle / Peso Promed.</th>
+                                    <th class="px-4 py-3">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyAvancesGanado" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="px-4 py-3 text-center text-gray-400">Sin datos registrados</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: AGRICULTURA Y CULTIVOS -->
+            <section id="tab-agricultura" class="tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Parcelas y Cultivos</h3>
+                        <p class="text-xs text-gray-500">Planificación de siembras, cosechas y rendimiento</p>
+                    </div>
+                    <button onclick="openModal('modalCultivo')" class="bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Registrar Nueva Parcela
+                    </button>
+                </div>
+
+                <!-- Parcelas Container -->
+                <div id="gridCultivos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Dynamic List -->
+                </div>
+
+                <!-- Sub-section: Labores Agrícolas -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-person-digging text-amber-600"></i> Bitácora de Labores Agrícolas
+                        </h4>
+                        <button onclick="openModal('modalLabor')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-md transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus-circle"></i> Registrar Labor
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3">Fecha</th>
+                                    <th class="px-4 py-3">Cultivo / Parcela</th>
+                                    <th class="px-4 py-3">Labor (Fumigación/Riego/Cosecha)</th>
+                                    <th class="px-4 py-3">Insumos Utilizados</th>
+                                    <th class="px-4 py-3">Rendimiento (Si aplica)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyLabores" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="px-4 py-3 text-center text-gray-400">Cargando labores...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: MAQUINARIA Y EQUIPOS -->
+            <section id="tab-maquinaria" class="tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Parque Automotor y Equipos</h3>
+                        <p class="text-xs text-gray-500">Tractores, implementos y mantenimiento preventivo</p>
+                    </div>
+                    <button onclick="openModal('modalMaquinaria')" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Registrar Equipo
+                    </button>
+                </div>
+
+                <div id="gridMaquinaria" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Dynamic Maquinaria Cards -->
+                </div>
+
+                <!-- Bitácora Mantenimiento -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-wrench text-blue-600"></i> Historial de Mantenimientos y Services
+                        </h4>
+                        <button onclick="openModal('modalMantenimiento')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-bold px-3 py-1.5 rounded-md transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus-circle"></i> Nuevo Mantenimiento
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3">Fecha</th>
+                                    <th class="px-4 py-3">Equipo</th>
+                                    <th class="px-4 py-3">Tipo Mantenimiento</th>
+                                    <th class="px-4 py-3">Costo ($)</th>
+                                    <th class="px-4 py-3">Próximo Service</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyMantenimientos" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="px-4 py-3 text-center text-gray-400">Sin registros de service</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: INVENTARIO E INSUMOS -->
+            <section id="tab-inventario" class="tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Inventario de Insumos</h3>
+                        <p class="text-xs text-gray-500">Semillas, agroquímicos, vacunas, repuestos y combustibles</p>
+                    </div>
+                    <button onclick="openModal('modalInsumo')" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Nuevo Insumo
+                    </button>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3">Producto / Insumo</th>
+                                    <th class="px-4 py-3">Categoría</th>
+                                    <th class="px-4 py-3">Stock Actual</th>
+                                    <th class="px-4 py-3">Mínimo Crítico</th>
+                                    <th class="px-4 py-3">Unidad</th>
+                                    <th class="px-4 py-3 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyInventario" class="divide-y divide-gray-100">
+                                <tr><td colspan="6" class="px-4 py-3 text-center text-gray-400">Cargando datos de inventario...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: FINANZAS Y REGISTRO ECONÓMICO -->
+            <section id="tab-finanzas" class="tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Finanzas y Flujo de Caja</h3>
+                        <p class="text-xs text-gray-500">Ventas de producción, gastos operacionales y compras</p>
+                    </div>
+                    <button onclick="openModal('modalTransaccion')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Nueva Transacción
+                    </button>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3">Fecha</th>
+                                    <th class="px-4 py-3">Tipo</th>
+                                    <th class="px-4 py-3">Categoría</th>
+                                    <th class="px-4 py-3">Descripción</th>
+                                    <th class="px-4 py-3 text-right">Monto ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyFinanzas" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="px-4 py-3 text-center text-gray-400">Sin movimientos financieros</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- MODALES DE REGISTRO / EDICIÓN -->
+
+    <!-- Modal 1: Lote Ganado -->
+    <div id="modalLoteGanado" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Lote de Ganado</h3>
+            <form id="formLoteGanado" onsubmit="handleSaveLoteGanado(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre / Número de Lote</label>
+                    <input type="text" id="loteNombre" required placeholder="Ej: Lote Vacas Engorde 01" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Cabezas (Cantidad)</label>
+                        <input type="number" id="loteCantidad" required min="1" placeholder="50" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Raza Principal</label>
+                        <input type="text" id="loteRaza" required placeholder="Ej: Brahman / Angus" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Propósito</label>
+                        <select id="loteProposito" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                            <option value="Carne">Engorde / Carne</option>
+                            <option value="Leche">Producción de Leche</option>
+                            <option value="Doble Propósito">Doble Propósito</option>
+                            <option value="Cria">Cría / Reproducción</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Ubicación / Potrero</label>
+                        <input type="text" id="loteUbicacion" required placeholder="Potrero El Potrero Norte" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalLoteGanado')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-agro-600 text-white text-sm font-semibold rounded-lg hover:bg-agro-700">Guardar Lote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Avance Ganado -->
+    <div id="modalAvanceGanado" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Evento Zootécnico</h3>
+            <form id="formAvanceGanado" onsubmit="handleSaveAvanceGanado(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Lote Ganado</label>
+                    <select id="avanceLoteSelect" required class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo de Evento</label>
+                    <select id="avanceTipo" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                        <option value="Pesaje">Pesaje Promedio</option>
+                        <option value="Vacunacion">Vacunación / Desparasitante</option>
+                        <option value="Tratamiento">Tratamiento Médico</option>
+                        <option value="Partos">Nacimientos / Partos</option>
+                        <option value="Mortalidad">Mortalidad / Baja</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Detalle / Peso Promedio (Kg)</label>
+                    <input type="text" id="avanceDetalle" required placeholder="Ej: 380 Kg promed. o Vacuna Aftosa" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Observaciones / Notas</label>
+                    <textarea id="avanceNotas" rows="2" placeholder="Notas adicionales..." class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-agro-500 outline-none"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAvanceGanado')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-agro-600 text-white text-sm font-semibold rounded-lg hover:bg-agro-700">Guardar Avance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Cultivo / Parcela -->
+    <div id="modalCultivo" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Parcela de Cultivo</h3>
+            <form id="formCultivo" onsubmit="handleSaveCultivo(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre Parcela / Lote</label>
+                    <input type="text" id="cultivoNombre" required placeholder="Ej: Parcela Maíz Híbrido 02" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo de Cultivo</label>
+                        <input type="text" id="cultivoTipo" required placeholder="Ej: Maíz, Soya, Café" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Área (Hectáreas)</label>
+                        <input type="number" step="0.1" id="cultivoArea" required placeholder="12.5" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha Siembra</label>
+                        <input type="date" id="cultivoFechaSiembra" required class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Est. Cosecha</label>
+                        <input type="date" id="cultivoFechaEst" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalCultivo')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 text-white text-sm font-semibold rounded-lg hover:bg-amber-700">Guardar Parcela</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Labor Agrícola -->
+    <div id="modalLabor" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Labor Agrícola</h3>
+            <form id="formLabor" onsubmit="handleSaveLabor(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Seleccionar Cultivo</label>
+                    <select id="laborCultivoSelect" required class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Labor Realizada</label>
+                    <select id="laborTipo" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                        <option value="Fumigación">Fumigación / Control Plagas</option>
+                        <option value="Fertilización">Fertilización</option>
+                        <option value="Riego">Riego / Mantenimiento Canal</option>
+                        <option value="Deshierbe">Deshierbe / Control Malezas</option>
+                        <option value="Cosecha">Cosecha y Recolección</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Insumos Utilizados</label>
+                    <input type="text" id="laborInsumos" placeholder="Ej: 50Kg UREA, Glyphosato 5L" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Rendimiento Cosecha (Ton/Ha o sacos)</label>
+                    <input type="text" id="laborRendimiento" placeholder="Ej: 4.5 Ton/Ha (Solo si es cosecha)" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalLabor')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 text-white text-sm font-semibold rounded-lg hover:bg-amber-700">Guardar Labor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Maquinaria -->
+    <div id="modalMaquinaria" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Maquinaria / Equipo</h3>
+            <form id="formMaquinaria" onsubmit="handleSaveMaquinaria(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre / Nombre Equipo</label>
+                    <input type="text" id="maqNombre" required placeholder="Ej: Tractor John Deere 6110M" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Marca / Modelo</label>
+                        <input type="text" id="maqModelo" required placeholder="JD 2021" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Horómetro / Km</label>
+                        <input type="number" id="maqHoras" required placeholder="1250" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Estado</label>
+                        <select id="maqEstado" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="Operativo">Operativo</option>
+                            <option value="Mantenimiento">En Mantenimiento</option>
+                            <option value="Reparacion">Requiere Reparación</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Combustible</label>
+                        <select id="maqCombustible" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="Diesel">Diesel</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="Electrico/N/A">Eléctrico / Sin Motor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalMaquinaria')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">Guardar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 6: Mantenimiento Maquinaria -->
+    <div id="modalMantenimiento" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Mantenimiento de Maquinaria</h3>
+            <form id="formMantenimiento" onsubmit="handleSaveMantenimiento(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Seleccionar Equipo</label>
+                    <select id="mantEquipoSelect" required class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo Service</label>
+                        <select id="mantTipo" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="Preventivo">Preventivo</option>
+                            <option value="Correctivo">Correctivo / Reparación</option>
+                            <option value="Cambio Aceite">Cambio de Aceite/Filtros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Costo ($)</label>
+                        <input type="number" step="0.01" id="mantCosto" required placeholder="150.00" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Próximo Service (Fecha estimada)</label>
+                    <input type="date" id="mantProxFecha" required class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalMantenimiento')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">Guardar Mantenimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 7: Insumo / Inventario -->
+    <div id="modalInsumo" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Agregar Producto a Inventario</h3>
+            <form id="formInsumo" onsubmit="handleSaveInsumo(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre Insumo / Producto</label>
+                    <input type="text" id="insumoNombre" required placeholder="Ej: Fertilizante NPK 15-15-15" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Categoría</label>
+                        <select id="insumoCategoria" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                            <option value="Agrícola">Agrícola (Semillas/Abono)</option>
+                            <option value="Veterinario">Veterinario (Vacunas/Medicamentos)</option>
+                            <option value="Alimento">Alimento Ganado / Forraje</option>
+                            <option value="Combustible">Combustibles / Aceites</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Unidad de Medida</label>
+                        <input type="text" id="insumoUnidad" required placeholder="Bolsas 50kg, Litros, Dosis" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Stock Inicial</label>
+                        <input type="number" id="insumoStock" required min="0" placeholder="100" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Stock Mínimo Alerta</label>
+                        <input type="number" id="insumoMinimo" required min="1" placeholder="15" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalInsumo')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700">Guardar Insumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 8: Transacción Financiera -->
+    <div id="modalTransaccion" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Registrar Movimiento Financiero</h3>
+            <form id="formTransaccion" onsubmit="handleSaveTransaccion(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo de Movimiento</label>
+                        <select id="transTipo" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="Ingreso">Ingreso (+)</option>
+                            <option value="Gasto">Gasto (-)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Monto ($)</label>
+                        <input type="number" step="0.01" id="transMonto" required placeholder="500.00" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Categoría</label>
+                    <select id="transCategoria" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <option value="Venta Ganado">Venta de Ganado</option>
+                        <option value="Venta Leche">Venta de Leche</option>
+                        <option value="Venta Cosecha">Venta de Cosecha / Grano</option>
+                        <option value="Insumos / Semillas">Compra de Insumos/Semillas</option>
+                        <option value="Mantenimiento">Mantenimiento Maquinaria</option>
+                        <option value="Salarios / Mano de obra">Salarios / Mano de Obra</option>
+                        <option value="Otros">Otros Ingresos / Gastos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Descripción / Concepto</label>
+                    <input type="text" id="transDescripcion" required placeholder="Ej: Venta de 5 novillos de engorde" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalTransaccion')" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Guardar Movimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- FIREBASE AND CLIENT SCRIPT LOGIC -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            onSnapshot, 
+            doc, 
+            deleteDoc, 
+            updateDoc, 
+            query 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Configuration provided by user
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg8A6JFLPQr0PykaFKsJZkmp6YFjxo66A",
+            authDomain: "ganaderia-vv.firebaseapp.com",
+            projectId: "ganaderia-vv",
+            storageBucket: "ganaderia-vv.firebasestorage.app",
+            messagingSenderId: "897110713954",
+            appId: "1:897110713954:web:188dda5e64b4803376533b"
+        };
+
+        // Initialize Firebase
+        let app, db;
+        let isFirebaseConnected = false;
+
+        // Application Local State (Acts as cache or fallback if Firestore offline)
+        const state = {
+            lotesGanado: [],
+            avancesGanado: [],
+            cultivos: [],
+            labores: [],
+            maquinaria: [],
+            mantenimientos: [],
+            inventario: [],
+            finanzas: []
+        };
+
+        // Global Chart Instance
+        let chartInstance = null;
+
+        // Initialize Application
+        window.addEventListener('load', () => {
+            document.getElementById('currentDate').innerText = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Toggle sidebar for mobile
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('hidden');
+            });
+
+            initFirebase();
+        });
+
+        function initFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                
+                // Setup Realtime Listeners for Firestore Collections
+                setupRealtimeListeners();
+            } catch (error) {
+                console.warn("Firebase initialization issue, falling back to local storage", error);
+                enableLocalFallback("Error de conexión Firebase");
+            }
+        }
+
+        function enableLocalFallback(reasonMessage = "Modo Local / Demo") {
+            isFirebaseConnected = false;
+            document.getElementById('dbStatusDot').className = "w-2.5 h-2.5 rounded-full bg-orange-400";
+            document.getElementById('dbStatusText').innerText = reasonMessage;
+            document.getElementById('firebaseApiWarning').classList.remove('hidden');
+            loadDemoData();
+        }
+
+        // Realtime Firestore Sync
+        function setupRealtimeListeners() {
+            const collections = ['lotesGanado', 'avancesGanado', 'cultivos', 'labores', 'maquinaria', 'mantenimientos', 'inventario', 'finanzas'];
+            let hasErrorHandled = false;
+
+            collections.forEach(colName => {
+                const q = query(collection(db, colName));
+                onSnapshot(q, (snapshot) => {
+                    // Successful Firestore connection confirmed
+                    if (!isFirebaseConnected && !hasErrorHandled) {
+                        isFirebaseConnected = true;
+                        document.getElementById('dbStatusDot').className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+                        document.getElementById('dbStatusText').innerText = "Firebase Conectado";
+                        document.getElementById('firebaseApiWarning').classList.add('hidden');
+                    }
+
+                    const data = [];
+                    snapshot.forEach((docSnap) => {
+                        data.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    state[colName] = data;
+                    renderUI();
+                }, (err) => {
+                    console.warn(`Firestore Error en '${colName}':`, err.code || err.message);
+                    if (!hasErrorHandled) {
+                        hasErrorHandled = true;
+                        enableLocalFallback("Modo Local / Demo");
+                    }
+                });
+            });
+        }
+
+        function loadDemoData() {
+            // Sample demo data in case Firestore API is not activated yet
+            if (state.lotesGanado.length === 0) {
+                state.lotesGanado = [
+                    { id: '1', nombre: 'Lote Engorde 01', cantidad: 45, raza: 'Brahman', proposito: 'Carne', ubicacion: 'Potrero Norte' },
+                    { id: '2', nombre: 'Lote Lechería A', cantidad: 22, raza: 'Girolando', proposito: 'Leche', ubicacion: 'Potrero Este' }
+                ];
+            }
+            if (state.cultivos.length === 0) {
+                state.cultivos = [
+                    { id: '1', nombre: 'Parcela Maíz 1', tipo: 'Maíz Híbrido', area: 15, fechaSiembra: '2026-01-10', fechaEst: '2026-05-15' },
+                    { id: '2', nombre: 'Lote Soya Verano', tipo: 'Soya', area: 30, fechaSiembra: '2026-02-01', fechaEst: '2026-06-20' }
+                ];
+            }
+            if (state.maquinaria.length === 0) {
+                state.maquinaria = [
+                    { id: '1', nombre: 'Tractor John Deere', modelo: '6110M', horas: 1420, estado: 'Operativo', combustible: 'Diesel' },
+                    { id: '2', nombre: 'Sembradora Directa', modelo: 'Semeato', horas: 320, estado: 'Mantenimiento', combustible: 'Electrico/N/A' }
+                ];
+            }
+            if (state.inventario.length === 0) {
+                state.inventario = [
+                    { id: '1', nombre: 'Fertilizante NPK 15-15-15', categoria: 'Agrícola', stock: 8, minimo: 10, unidad: 'Sacos 50kg' },
+                    { id: '2', nombre: 'Vacuna Aftosa', categoria: 'Veterinario', stock: 150, minimo: 30, unidad: 'Dosis' }
+                ];
+            }
+            if (state.finanzas.length === 0) {
+                state.finanzas = [
+                    { id: '1', fecha: '2026-03-01', tipo: 'Ingreso', categoria: 'Venta Ganado', descripcion: 'Venta de 5 novillos', monto: 4500 },
+                    { id: '2', fecha: '2026-03-05', tipo: 'Gasto', categoria: 'Insumos / Semillas', descripcion: 'Compra fertilizantes', monto: 1200 }
+                ];
+            }
+            renderUI();
+        }
+
+        // Generic Helper to save data (Firestore + local state fallback)
+        async function saveData(colName, itemData) {
+            if (isFirebaseConnected && db) {
+                try {
+                    await addDoc(collection(db, colName), itemData);
+                    showNotification("Registro guardado en Firebase exitosamente.");
+                    return;
+                } catch (e) {
+                    console.error("Error guardando en Firebase: ", e);
+                }
+            }
+            // Fallback: save to local state
+            const newItem = { id: Date.now().toString(), ...itemData };
+            state[colName].push(newItem);
+            showNotification("Registro guardado localmente.");
+            renderUI();
+        }
+
+        // Generic Helper to delete data
+        async function deleteItem(colName, id) {
+            if (isFirebaseConnected && db) {
+                try {
+                    await deleteDoc(doc(db, colName, id));
+                    showNotification("Registro eliminado de Firebase.");
+                    return;
+                } catch (e) {
+                    console.error("Error al eliminar: ", e);
+                }
+            }
+            state[colName] = state[colName].filter(item => item.id !== id);
+            showNotification("Registro eliminado.");
+            renderUI();
+        }
+
+        // Notification toast
+        function showNotification(msg) {
+            const notif = document.getElementById('statusNotification');
+            const notifMsg = document.getElementById('statusNotificationMsg');
+            notifMsg.innerText = msg;
+            notif.classList.remove('hidden');
+            setTimeout(() => {
+                notif.classList.add('hidden');
+            }, 4000);
+        }
+
+        // Navigation Switcher
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('sidebar-item-active'));
+            
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const navBtn = document.getElementById(`nav-${tabName}`);
+            if (navBtn) navBtn.classList.add('sidebar-item-active');
+
+            // Set Title Header
+            const titles = {
+                dashboard: '<i class="fa-solid fa-chart-pie text-agro-600"></i> Dashboard General',
+                ganaderia: '<i class="fa-solid fa-cow text-agro-600"></i> Gestión de Ganadería & Lotes',
+                agricultura: '<i class="fa-solid fa-seedling text-amber-600"></i> Gestión Agrícola & Cultivos',
+                maquinaria: '<i class="fa-solid fa-tractor text-blue-600"></i> Maquinaria & Equipos',
+                inventario: '<i class="fa-solid fa-boxes-stacked text-purple-600"></i> Inventario & Insumos',
+                finanzas: '<i class="fa-solid fa-hand-holding-dollar text-emerald-600"></i> Finanzas & Caja'
+            };
+            document.getElementById('pageTitle').innerHTML = titles[tabName] || 'AgroManager';
+
+            // Close sidebar on mobile after tab selection
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('hidden');
+            }
+        };
+
+        // Modal Helpers
+        window.openModal = function(modalId) {
+            populateSelectOptions();
+            document.getElementById(modalId).classList.remove('hidden');
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        };
+
+        function populateSelectOptions() {
+            // Populate Lote Select
+            const loteSelect = document.getElementById('avanceLoteSelect');
+            if (loteSelect) {
+                loteSelect.innerHTML = state.lotesGanado.length > 0 
+                    ? state.lotesGanado.map(l => `<option value="${l.nombre}">${l.nombre} (${l.cantidad} cabezas)</option>`).join('')
+                    : '<option value="">Sin lotes registrados</option>';
+            }
+
+            // Populate Cultivo Select
+            const cultivoSelect = document.getElementById('laborCultivoSelect');
+            if (cultivoSelect) {
+                cultivoSelect.innerHTML = state.cultivos.length > 0
+                    ? state.cultivos.map(c => `<option value="${c.nombre}">${c.nombre} (${c.tipo})</option>`).join('')
+                    : '<option value="">Sin cultivos registrados</option>';
+            }
+
+            // Populate Maquinaria Select
+            const mantSelect = document.getElementById('mantEquipoSelect');
+            if (mantSelect) {
+                mantSelect.innerHTML = state.maquinaria.length > 0
+                    ? state.maquinaria.map(m => `<option value="${m.nombre}">${m.nombre} - ${m.modelo}</option>`).join('')
+                    : '<option value="">Sin equipos registrados</option>';
+            }
+        }
+
+        // Form Handlers
+        window.handleSaveLoteGanado = async function(e) {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('loteNombre').value,
+                cantidad: parseInt(document.getElementById('loteCantidad').value) || 0,
+                raza: document.getElementById('loteRaza').value,
+                proposito: document.getElementById('loteProposito').value,
+                ubicacion: document.getElementById('loteUbicacion').value
+            };
+            await saveData('lotesGanado', data);
+            document.getElementById('formLoteGanado').reset();
+            closeModal('modalLoteGanado');
+        };
+
+        window.handleSaveAvanceGanado = async function(e) {
+            e.preventDefault();
+            const data = {
+                fecha: new Date().toISOString().split('T')[0],
+                lote: document.getElementById('avanceLoteSelect').value,
+                tipo: document.getElementById('avanceTipo').value,
+                detalle: document.getElementById('avanceDetalle').value,
+                notas: document.getElementById('avanceNotas').value
+            };
+            await saveData('avancesGanado', data);
+            document.getElementById('formAvanceGanado').reset();
+            closeModal('modalAvanceGanado');
+        };
+
+        window.handleSaveCultivo = async function(e) {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('cultivoNombre').value,
+                tipo: document.getElementById('cultivoTipo').value,
+                area: parseFloat(document.getElementById('cultivoArea').value) || 0,
+                fechaSiembra: document.getElementById('cultivoFechaSiembra').value,
+                fechaEst: document.getElementById('cultivoFechaEst').value
+            };
+            await saveData('cultivos', data);
+            document.getElementById('formCultivo').reset();
+            closeModal('modalCultivo');
+        };
+
+        window.handleSaveLabor = async function(e) {
+            e.preventDefault();
+            const data = {
+                fecha: new Date().toISOString().split('T')[0],
+                cultivo: document.getElementById('laborCultivoSelect').value,
+                tipo: document.getElementById('laborTipo').value,
+                insumos: document.getElementById('laborInsumos').value,
+                rendimiento: document.getElementById('laborRendimiento').value
+            };
+            await saveData('labores', data);
+            document.getElementById('formLabor').reset();
+            closeModal('modalLabor');
+        };
+
+        window.handleSaveMaquinaria = async function(e) {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('maqNombre').value,
+                modelo: document.getElementById('maqModelo').value,
+                horas: parseInt(document.getElementById('maqHoras').value) || 0,
+                estado: document.getElementById('maqEstado').value,
+                combustible: document.getElementById('maqCombustible').value
+            };
+            await saveData('maquinaria', data);
+            document.getElementById('formMaquinaria').reset();
+            closeModal('modalMaquinaria');
+        };
+
+        window.handleSaveMantenimiento = async function(e) {
+            e.preventDefault();
+            const data = {
+                fecha: new Date().toISOString().split('T')[0],
+                equipo: document.getElementById('mantEquipoSelect').value,
+                tipo: document.getElementById('mantTipo').value,
+                costo: parseFloat(document.getElementById('mantCosto').value) || 0,
+                proxFecha: document.getElementById('mantProxFecha').value
+            };
+            await saveData('mantenimientos', data);
+            document.getElementById('formMantenimiento').reset();
+            closeModal('modalMantenimiento');
+        };
+
+        window.handleSaveInsumo = async function(e) {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('insumoNombre').value,
+                categoria: document.getElementById('insumoCategoria').value,
+                unidad: document.getElementById('insumoUnidad').value,
+                stock: parseInt(document.getElementById('insumoStock').value) || 0,
+                minimo: parseInt(document.getElementById('insumoMinimo').value) || 0
+            };
+            await saveData('inventario', data);
+            document.getElementById('formInsumo').reset();
+            closeModal('modalInsumo');
+        };
+
+        window.handleSaveTransaccion = async function(e) {
+            e.preventDefault();
+            const data = {
+                fecha: new Date().toISOString().split('T')[0],
+                tipo: document.getElementById('transTipo').value,
+                monto: parseFloat(document.getElementById('transMonto').value) || 0,
+                categoria: document.getElementById('transCategoria').value,
+                descripcion: document.getElementById('transDescripcion').value
+            };
+            await saveData('finanzas', data);
+            document.getElementById('formTransaccion').reset();
+            closeModal('modalTransaccion');
+        };
+
+        window.handleDelete = async function(colName, id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+                await deleteItem(colName, id);
+            }
+        };
+
+        // Main UI Render Function
+        function renderUI() {
+            renderDashboard();
+            renderGanaderia();
+            renderAgricultura();
+            renderMaquinaria();
+            renderInventario();
+            renderFinanzas();
+        }
+
+        // Render Dashboard Metrics & Charts
+        function renderDashboard() {
+            const totalCabezas = state.lotesGanado.reduce((acc, curr) => acc + (parseInt(curr.cantidad) || 0), 0);
+            document.getElementById('dashTotalGanado').innerText = totalCabezas;
+
+            document.getElementById('dashTotalCultivos').innerText = state.cultivos.length;
+            
+            const maqOperativas = state.maquinaria.filter(m => m.estado === 'Operativo').length;
+            document.getElementById('dashTotalMaquinaria').innerText = `${maqOperativas} / ${state.maquinaria.length}`;
+
+            // Calculate Balance
+            const ingresos = state.finanzas.filter(f => f.tipo === 'Ingreso').reduce((acc, curr) => acc + (parseFloat(curr.monto) || 0), 0);
+            const gastos = state.finanzas.filter(f => f.tipo === 'Gasto').reduce((acc, curr) => acc + (parseFloat(curr.monto) || 0), 0);
+            const balance = ingresos - gastos;
+            
+            const dashBalanceEl = document.getElementById('dashBalance');
+            dashBalanceEl.innerText = `$${balance.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`;
+            dashBalanceEl.className = balance >= 0 ? "text-3xl font-black text-emerald-600 mt-1" : "text-3xl font-black text-red-600 mt-1";
+
+            // Render Chart
+            renderChart(ingresos, gastos);
+
+            // Render Alerts
+            renderAlerts();
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alertsList');
+            const alerts = [];
+
+            // Low Stock Alerts
+            state.inventario.forEach(item => {
+                if (parseInt(item.stock) <= parseInt(item.minimo)) {
+                    alerts.push(`
+                        <div class="p-3 bg-red-50 border-l-4 border-red-500 rounded text-red-800 flex items-center justify-between">
+                            <div>
+                                <p class="font-bold text-xs"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Stock Bajo: ${item.nombre}</p>
+                                <p class="text-xs">Quedan ${item.stock} ${item.unidad} (Mín: ${item.minimo})</p>
+                            </div>
+                            <button onclick="switchTab('inventario')" class="text-xs text-red-700 underline font-semibold">Ver</button>
+                        </div>
+                    `);
+                }
+            });
+
+            // Maintenance Alerts
+            state.maquinaria.filter(m => m.estado !== 'Operativo').forEach(m => {
+                alerts.push(`
+                    <div class="p-3 bg-amber-50 border-l-4 border-amber-500 rounded text-amber-800 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-xs"><i class="fa-solid fa-wrench mr-1"></i> Equipo en Service: ${m.nombre}</p>
+                            <p class="text-xs">Estado: ${m.estado}</p>
+                        </div>
+                        <button onclick="switchTab('maquinaria')" class="text-xs text-amber-700 underline font-semibold">Ver</button>
+                    </div>
+                `);
+            });
+
+            if (alerts.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 bg-emerald-50 text-emerald-800 rounded-lg text-center text-xs font-medium border border-emerald-100">
+                        <i class="fa-solid fa-circle-check text-base text-emerald-600 mb-1 block"></i>
+                        No hay alertas críticas en el sistema. Todo marcha en orden.
+                    </div>
+                `;
+            } else {
+                container.innerHTML = alerts.join('');
+            }
+        }
+
+        function renderChart(ingresos, gastos) {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ingresos Totales ($)', 'Gastos Totales ($)'],
+                    datasets: [{
+                        label: 'Monto Total ($)',
+                        data: [ingresos, gastos],
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderGanaderia() {
+            const grid = document.getElementById('gridLotesGanado');
+            if (state.lotesGanado.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-300">No hay lotes de ganado registrados. Presiona "+ Nuevo Lote" para comenzar.</div>`;
+            } else {
+                grid.innerHTML = state.lotesGanado.map(lote => `
+                    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-gray-800 text-base">${lote.nombre}</h4>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">${lote.proposito}</span>
+                            </div>
+                            <div class="space-y-1 text-xs text-gray-600 my-3">
+                                <p><i class="fa-solid fa-cow text-emerald-600 w-4"></i> <strong>Cantidad:</strong> ${lote.cantidad} cabezas</p>
+                                <p><i class="fa-solid fa-dna text-emerald-600 w-4"></i> <strong>Raza:</strong> ${lote.raza}</p>
+                                <p><i class="fa-solid fa-location-dot text-emerald-600 w-4"></i> <strong>Potrero:</strong> ${lote.ubicacion}</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-gray-100 flex justify-end">
+                            <button onclick="handleDelete('lotesGanado', '${lote.id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render Avances
+            const tbody = document.getElementById('tbodyAvancesGanado');
+            if (state.avancesGanado.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">Sin eventos zootécnicos registrados</td></tr>`;
+            } else {
+                tbody.innerHTML = state.avancesGanado.map(a => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-800">${a.fecha || '-'}</td>
+                        <td class="px-4 py-3 font-semibold text-emerald-700">${a.lote}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">${a.tipo}</span></td>
+                        <td class="px-4 py-3">${a.detalle}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">${a.notas || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function renderAgricultura() {
+            const grid = document.getElementById('gridCultivos');
+            if (state.cultivos.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-300">No hay parcelas agrícolas registradas.</div>`;
+            } else {
+                grid.innerHTML = state.cultivos.map(c => `
+                    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-gray-800 text-base">${c.nombre}</h4>
+                                <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">${c.tipo}</span>
+                            </div>
+                            <div class="space-y-1 text-xs text-gray-600 my-3">
+                                <p><i class="fa-solid fa-vector-square text-amber-600 w-4"></i> <strong>Área:</strong> ${c.area} Hectáreas</p>
+                                <p><i class="fa-solid fa-calendar-day text-amber-600 w-4"></i> <strong>Siembra:</strong> ${c.fechaSiembra}</p>
+                                <p><i class="fa-solid fa-wheat-awn text-amber-600 w-4"></i> <strong>Est. Cosecha:</strong> ${c.fechaEst || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-gray-100 flex justify-end">
+                            <button onclick="handleDelete('cultivos', '${c.id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render Labores
+            const tbody = document.getElementById('tbodyLabores');
+            if (state.labores.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">Sin labores agrícolas registradas</td></tr>`;
+            } else {
+                tbody.innerHTML = state.labores.map(l => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">${l.fecha || '-'}</td>
+                        <td class="px-4 py-3 font-semibold text-amber-700">${l.cultivo}</td>
+                        <td class="px-4 py-3">${l.tipo}</td>
+                        <td class="px-4 py-3">${l.insumos || 'N/A'}</td>
+                        <td class="px-4 py-3 font-bold text-gray-800">${l.rendimiento || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function renderMaquinaria() {
+            const grid = document.getElementById('gridMaquinaria');
+            if (state.maquinaria.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-300">No hay maquinaria registrada.</div>`;
+            } else {
+                grid.innerHTML = state.maquinaria.map(m => `
+                    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-gray-800 text-base">${m.nombre}</h4>
+                                <span class="text-xs px-2.5 py-1 rounded-full font-bold ${
+                                    m.estado === 'Operativo' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                                }">${m.estado}</span>
+                            </div>
+                            <div class="space-y-1 text-xs text-gray-600 my-3">
+                                <p><i class="fa-solid fa-id-card text-blue-600 w-4"></i> <strong>Modelo:</strong> ${m.modelo}</p>
+                                <p><i class="fa-solid fa-stopwatch text-blue-600 w-4"></i> <strong>Horómetro/Km:</strong> ${m.horas} hrs</p>
+                                <p><i class="fa-solid fa-gas-pump text-blue-600 w-4"></i> <strong>Combustible:</strong> ${m.combustible}</p>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-gray-100 flex justify-end">
+                            <button onclick="handleDelete('maquinaria', '${m.id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render Service
+            const tbody = document.getElementById('tbodyMantenimientos');
+            if (state.mantenimientos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">Sin historial de mantenimiento</td></tr>`;
+            } else {
+                tbody.innerHTML = state.mantenimientos.map(m => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">${m.fecha || '-'}</td>
+                        <td class="px-4 py-3 font-semibold text-blue-700">${m.equipo}</td>
+                        <td class="px-4 py-3">${m.tipo}</td>
+                        <td class="px-4 py-3 font-bold text-gray-800">$${parseFloat(m.costo || 0).toFixed(2)}</td>
+                        <td class="px-4 py-3 text-xs text-amber-700 font-semibold">${m.proxFecha || 'N/A'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function renderInventario() {
+            const tbody = document.getElementById('tbodyInventario');
+            if (state.inventario.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-gray-400">Sin insumos registrados</td></tr>`;
+            } else {
+                tbody.innerHTML = state.inventario.map(item => {
+                    const isLow = parseInt(item.stock) <= parseInt(item.minimo);
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-800">${item.nombre}</td>
+                            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-purple-50 text-purple-700 font-medium">${item.categoria}</span></td>
+                            <td class="px-4 py-3 font-bold ${isLow ? 'text-red-600' : 'text-emerald-600'}">${item.stock}</td>
+                            <td class="px-4 py-3 text-gray-400">${item.minimo}</td>
+                            <td class="px-4 py-3 text-xs text-gray-500">${item.unidad}</td>
+                            <td class="px-4 py-3 text-right">
+                                <button onclick="handleDelete('inventario', '${item.id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function renderFinanzas() {
+            const tbody = document.getElementById('tbodyFinanzas');
+            if (state.finanzas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">Sin transacciones registradas</td></tr>`;
+            } else {
+                tbody.innerHTML = state.finanzas.map(f => {
+                    const isIngreso = f.tipo === 'Ingreso';
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-xs text-gray-500">${f.fecha || '-'}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-xs font-bold ${isIngreso ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                                    ${f.tipo}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-700 font-medium">${f.categoria}</td>
+                            <td class="px-4 py-3 text-gray-600">${f.descripcion}</td>
+                            <td class="px-4 py-3 text-right font-black ${isIngreso ? 'text-emerald-600' : 'text-red-600'}">
+                                ${isIngreso ? '+' : '-'}$${parseFloat(f.monto || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+    </script>
+</body>
+</html>
