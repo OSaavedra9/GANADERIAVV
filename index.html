@@ -775,8 +775,13 @@
 
     <!-- FIREBASE AND CLIENT SCRIPT LOGIC -->
     <script type="module">
-        // Import Firebase modules
+        // Import Firebase modules with full CDN URLs for web browser compatibility
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { 
             getFirestore, 
             collection, 
@@ -800,7 +805,7 @@
         };
 
         // Initialize Firebase
-        let app, db;
+        let app, db, auth;
         let isFirebaseConnected = false;
 
         // Application Local State (Acts as cache or fallback if Firestore offline)
@@ -831,16 +836,24 @@
             initFirebase();
         });
 
-        function initFirebase() {
+        async function initFirebase() {
             try {
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
+                auth = getAuth(app);
                 
-                // Setup Realtime Listeners for Firestore Collections
-                setupRealtimeListeners();
+                // Authenticate anonymously so both iPhone and Mac get valid tokens
+                await signInAnonymously(auth);
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        console.log("Sesión autenticada en Firebase:", user.uid);
+                        setupRealtimeListeners();
+                    }
+                });
             } catch (error) {
                 console.warn("Firebase initialization issue, falling back to local storage", error);
-                enableLocalFallback("Error de conexión Firebase");
+                enableLocalFallback("Error de autenticación Firebase");
             }
         }
 
